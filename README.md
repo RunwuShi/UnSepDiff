@@ -34,7 +34,10 @@ To use this repository, please prepare the code, environment and pretrained chec
     ```
 
 
-
+## Reference
+- Undiff: https://arxiv.org/abs/2306.00721
+- DPS: https://arxiv.org/abs/2209.14687, Github: https://github.com/DPS2022/diffusion-posterior-sampling
+- The Dirac sampling method is from https://arxiv.org/abs/2302.02257, Github: https://github.com/gladia-research-group/multi-source-diffusion-models
 
 
 
