@@ -141,12 +141,11 @@ class LayerNorm2d(nn.LayerNorm):
 
 class RMSNorm1d(nn.RMSNorm):
     def __init__(self, num_channels, eps=1e-6, affine=True):
-        # PyTorch 2.0+ 的 nn.RMSNorm 接口：normalized_shape, eps, elementwise_affine
         super().__init__(normalized_shape=num_channels, eps=eps, elementwise_affine=affine)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.transpose(-1, -2)               # -> [B, T, C]
-        x = F.rms_norm(x,                     # 函数式调用同样可行
+        x = F.rms_norm(x,                
                        normalized_shape=self.normalized_shape,
                        weight=self.weight if self.elementwise_affine else None,
                        eps=self.eps)
@@ -206,12 +205,12 @@ def pad_audio_for_stft(
 ):
     B, L = x.shape
     T = (L // hop_length) + 1
-    remainder = T % align_factor # spec T Dim可以被整除
+    remainder = T % align_factor 
     pad_samples = 0
     if remainder != 0:
         pad_frames = align_factor - remainder
         pad_samples = pad_frames * hop_length
-        x = F.pad(x, (0, pad_samples), mode='constant', value=0) # 左侧
+        x = F.pad(x, (0, pad_samples), mode='constant', value=0) # 
          
     return x, pad_samples
     

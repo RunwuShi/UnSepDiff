@@ -22,9 +22,9 @@ class stftpreprocess(nn.Module):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.win_length = win_length
-        window = torch.hann_window(self.win_length) # 256
-        window = window / window.sum()   # 归一化，使得窗口和为 1
-        window = window.pow(0.5)           # 取平方根
+        window = torch.hann_window(self.win_length) 
+        window = window / window.sum()   
+        window = window.pow(0.5)           
         self.register_buffer('stft_window', window)
         
         self.press = press
@@ -34,17 +34,8 @@ class stftpreprocess(nn.Module):
         :param x: [B, wave length]
         :return: [B, F, T] complex
         """
-        # std
-        # std
-        # mix_std_ = torch.std(x, dim=1, keepdim=True)  # [B, 1]
-        # x = x / mix_std_  # RMS normalization
-        # max
-        # 归一化：将音频幅值限制在 [-1, 1]
         x = x / (x.abs().max(dim=1, keepdim=True)[0] + 1e-8)
-        
-        # 填充：使用 reflect 填充，确保 STFT 能够处理边缘
         pad = (self.n_fft - self.hop_length) // 2
-        # 这里使用 F.pad 对每个样本进行 padding，输入需加上 channel 维度
         x = x.unsqueeze(1)  # [B, 1, wave_length]
         x = F.pad(x, (pad, pad), mode='reflect')
         x = x.squeeze(1)  # [B, wave_length + 2*pad]
@@ -86,17 +77,6 @@ class MelPreprocess(nn.Module):
                  f_max: float = None,
                  press: str = "log",
                  **kwargs):
-        """
-        参数：
-          n_fft: FFT 的窗口大小
-          hop_length: 帧移
-          win_length: 窗口长度
-          n_mels: mel 频谱的通道数
-          sr: 采样率
-          f_min: mel 滤波器最低频率
-          f_max: mel 滤波器最高频率，如果为 None 则默认为 sr/2
-          press: 压缩方式，"log" 表示取对数，否则认为传入的是一个指数（如 0.5 表示平方根）
-        """
         super().__init__()
         self.n_fft = n_fft
         self.hop_length = hop_length
@@ -105,55 +85,35 @@ class MelPreprocess(nn.Module):
         self.sr = sr
         self.press = press
 
-        # 生成窗函数，归一化后取平方根
         window = torch.hann_window(self.win_length)
         window = window / window.sum()  
         window = window.pow(0.5)
         self.register_buffer('stft_window', window)
-        
-        # 设置最高频率
+
         if f_max is None:
             f_max = self.sr / 2
         self.f_min = f_min
         self.f_max = f_max
         
-        # 生成 mel 滤波器组
-        # torchaudio.functional.melscale_fbanks 的输出 shape 为 [n_mels, n_fft//2+1]
+
         mel_fb = torchaudio.functional.melscale_fbanks(n_fft // 2 + 1, self.sr, n_mels, f_min, f_max)
         self.register_buffer('mel_fb', mel_fb)
 
     def forward(self, x, spec_type="amplitude"):
-        """
-        输入：
-          x: [B, wave_length]，一维信号，未必归一化
-        输出：
-          mel_spec: [B, n_mels, T]，mel频谱图
-        """
-        # 归一化：将信号幅值归一化到 [-1, 1]
         x = x / (x.abs().max(dim=1, keepdim=True)[0] + 1e-8)
-        
-        # 反射填充，保证边缘效果
         pad = (self.n_fft - self.hop_length) // 2
         x = x.unsqueeze(1)  # [B, 1, wave_length]
         x = F.pad(x, (pad, pad), mode='reflect')
         x = x.squeeze(1)  # [B, wave_length + 2*pad]
-        
-        # 计算 STFT，返回复杂谱
         spec = torch.stft(x,
                           n_fft=self.n_fft,
                           hop_length=self.hop_length,
                           win_length=self.win_length,
                           window=self.stft_window,
                           return_complex=True)  # [B, F, T]
-        
-        # 获取幅值谱
         spec_amp = spec.abs()  # [B, F, T]
-        
-        # 将幅值谱映射到 mel 频谱：mel_fb: [n_mels, F]
-        # 使用矩阵乘法：将每个样本 [F, T] 映射为 [n_mels, T]
         mel_spec = torch.matmul(self.mel_fb, spec_amp)  # [B, n_mels, T]
-        
-        # 压缩幅值
+
         if spec_type == "amplitude":
             if self.press == "log":
                 mel_spec = torch.log(torch.clamp(mel_spec, min=1e-5))
@@ -165,15 +125,6 @@ class MelPreprocess(nn.Module):
 
 class MelConvert(nn.Module):
     def __init__(self, n_fft: int, sr: int, n_mels: int, f_min: float=0.0, f_max: float=None, press: str="log"):
-        """
-        参数：
-          n_fft: 与 STFT 模块中一致的 FFT 窗口大小
-          sr: 采样率
-          n_mels: mel 频谱的通道数
-          f_min: mel 滤波器最低频率
-          f_max: mel 滤波器最高频率，如果为 None 则默认为 sr/2
-          press: 压缩方式，“log” 表示取对数，否则认为传入的是指数（如 0.5 表示平方根）
-        """
         super().__init__()
         self.n_fft = n_fft
         sr = 16000
@@ -194,19 +145,8 @@ class MelConvert(nn.Module):
         self.register_buffer('mel_fb', mel_fb)
     
     def forward(self, spec_complex):
-        """
-        输入：
-          spec_complex: [B, F, T] complex tensor，来自 STFT 模块
-        输出：
-          mel_spec: [B, n_mels, T]，根据 press 参数压缩后的 mel 频谱
-        """
-        # 计算幅值谱
         spec_amp = spec_complex.abs()  # [B, F, T]
-        
-        # 将幅值谱转换到 mel 频谱：矩阵乘法将 [F, T] 映射为 [n_mels, T]
         mel_spec = torch.matmul(self.mel_fb.transpose(-1, -2), spec_amp)  # [B, n_mels, T]
-        
-        # 进行压缩处理
         if self.press == "log":
             mel_spec = torch.log(torch.clamp(mel_spec, min=1e-5))
         else:
@@ -402,23 +342,5 @@ class spkemb_encoder(nn.Module):
             return spk_embedding, loss
         if not training:
             return spk_embedding, spk_out
-
-
-if __name__ ==  '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    
-    config = toml.load('/gs/bs/tga-nakadailab/shirunwu/work/diff_infer/config/spkencoder/spkencoder.toml')
-
-    # model = mix_src_encoder(256, config).to(device)
-    model = spkemb_encoder(h_channels = 256, config = config, spk_num = 100).to(device)
-
-    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('total_params',total_params)
-
-    wave = torch.randn(64, 48000).to(device)
-    out = model(wave)
-
-    a = 1
 
 

@@ -47,57 +47,38 @@ class downsample(nn.Module):
 
 class SingleAttentionLayer(nn.Module):
     def __init__(self, hidden_dim, num_heads, dropout=0.1):
-        """
-        hidden_dim: 注意力层输入和输出的维度
-        num_heads: 多头注意力中的头数
-        dropout: dropout 概率
-        """
         super(SingleAttentionLayer, self).__init__()
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
         self.head_dim = hidden_dim // num_heads
         self.dropout = dropout
 
-        # 定义 Q, K, V 的线性变换参数，维度均为 [hidden_dim, hidden_dim]
         self.W_q = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
         self.W_k = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
         self.W_v = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
         self.W_o = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
 
-        # LayerNorm 用于残差后的归一化
         self.norm = nn.LayerNorm(hidden_dim)
     
     def forward(self, x):
-        """
-        x: [B, T, hidden_dim]
-        返回: [B, T, hidden_dim]
-        """
         B, T, _ = x.size()
 
         x = self.norm(x)
         
-        # 计算 Q, K, V
         Q = torch.matmul(x, self.W_q)  # [B, T, hidden_dim]
         K = torch.matmul(x, self.W_k)  # [B, T, hidden_dim]
         V = torch.matmul(x, self.W_v)  # [B, T, hidden_dim]
-        
-        # 将 Q, K, V 分拆成多个 head，得到 [B, num_heads, T, head_dim]
         Q = Q.view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
         K = K.view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
         V = V.view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
-        
-        # 计算缩放点积注意力：scores 的形状为 [B, num_heads, T, T]
         scale = torch.sqrt(torch.tensor(self.head_dim, dtype=Q.dtype, device=Q.device))
         scores = torch.matmul(Q, K.transpose(-2, -1)) / scale
 
         attn = F.softmax(scores, dim=-1)
         attn = F.dropout(attn, p=self.dropout, training=self.training)
         
-        # 计算注意力输出，形状为 [B, num_heads, T, head_dim]
         out = torch.matmul(attn, V)
-        # 将多头输出合并为 [B, T, hidden_dim]
         out = out.transpose(1, 2).contiguous().view(B, T, self.hidden_dim)
-        # 经过最终线性投影
         out = torch.matmul(out, self.W_o)
         
         out = x + out
@@ -116,9 +97,9 @@ class stftpreprocess(nn.Module):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.win_length = win_length
-        window = torch.hann_window(self.win_length) # 256
-        window = window / window.sum()   # 归一化，使得窗口和为 1
-        window = window.pow(0.5)           # 取平方根
+        window = torch.hann_window(self.win_length)
+        window = window / window.sum()   
+        window = window.pow(0.5)         
         self.register_buffer('stft_window', window)
         
         self.press = press
@@ -128,17 +109,8 @@ class stftpreprocess(nn.Module):
         :param x: [B, wave length]
         :return: [B, F, T] complex
         """
-        # std
-        # std
-        # mix_std_ = torch.std(x, dim=1, keepdim=True)  # [B, 1]
-        # x = x / mix_std_  # RMS normalization
-        # max
-        # 归一化：将音频幅值限制在 [-1, 1]
         x = x / (x.abs().max(dim=1, keepdim=True)[0] + 1e-8)
-        
-        # 填充：使用 reflect 填充，确保 STFT 能够处理边缘
         pad = (self.n_fft - self.hop_length) // 2
-        # 这里使用 F.pad 对每个样本进行 padding，输入需加上 channel 维度
         x = x.unsqueeze(1)  # [B, 1, wave_length]
         x = F.pad(x, (pad, pad), mode='reflect')
         x = x.squeeze(1)  # [B, wave_length + 2*pad]
@@ -232,24 +204,5 @@ class mix_src_encoder(nn.Module):
         
         return out
 
-
-
-
-
-if __name__ ==  '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    
-    config = toml.load('/gs/bs/tga-nakadailab/shirunwu/work/ws_tse/configs/vae.toml')
-
-    model = mix_src_encoder(256, config).to(device)
-
-    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('total_params',total_params)
-
-    wave = torch.randn(2, 48000).to(device)
-    out = model(wave)
-
-    a = 1
 
 
