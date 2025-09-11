@@ -1,0 +1,20 @@
+[FFT]
+# denoise
+n_fft=512
+hop_length=256
+win_length=512
+
+# normal
+# n_fft=384
+# hop_length=192
+# win_length=384
+
+[train_setting]
+batch_size   = 368
+sample_rate = 16000
+target_sample_rate = 16000
+
+[dataset]
+used_spk_num  = 100
+tgt_len_sec   = 4
+tgt_sr        = 16000
