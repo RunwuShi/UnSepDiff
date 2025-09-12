@@ -1,0 +1,13 @@
+used_audio/
+checkpoints/
+test_results/
+
+nohup.out
+*.pyc
+*.log
+*.out
+*.ckpt
+*.txt
+.nfs*
+*.pth
+

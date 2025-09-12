@@ -773,8 +773,8 @@ class GaussianDiffusion_spk(nn.Module):
 
 
         # 2. dps/dsg sampling
-        dps_step = 1 # 1
-        pbar = tqdm(range(dps_step), ncols=80)
+        dps_step = 5
+        pbar = tqdm(range(dps_step, -1, -1), ncols=80)
 
         x_conti = x.clone()
         for i in pbar:
