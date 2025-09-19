@@ -4,7 +4,7 @@
     <img src="./assets/002.png" width="80%"/>
 </p>
 
-This repository contains the implementation of the paper "*Unsupervised Single-Channel Speech Separation with a Diffusion Prior under Speaker-Embedding Guidance*".
+<!-- This repository contains the implementation of the paper "*Unsupervised Single-Channel Speech Separation with a Diffusion Prior under Speaker-Embedding Guidance*". -->
 
 ## Setup
 To use this repository, please prepare the code, environment and pretrained checkpoints.
