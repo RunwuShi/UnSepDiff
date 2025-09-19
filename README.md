@@ -9,7 +9,7 @@
 ## Setup
 To use this repository, please prepare the code, environment and pretrained checkpoints.
 
-1. Clone this repositrory and prepare the environment 
+1. Prepare the environment 
     ```
     $ git clone https://github.com/RunwuShi/UnSepDiff.git
     $ cd ./UnSepDiff
@@ -19,7 +19,7 @@ To use this repository, please prepare the code, environment and pretrained chec
     ```
 
 
-2. Download the diffusion and speaker model checkpoints, and place them in `./checkpoints`.
+2. Download pretrained checkpoints, and place them in `./checkpoints`.
 
    Diffusion model: [Google Drive](https://drive.google.com/file/d/1NpEZzDiDSwNTHFL8gDCJ1yVaNldPEZ3U/view?usp=drive_link)  
    Speaker model: [Google Drive](https://drive.google.com/file/d/1cNttkLX4Gm_cfy6Pn8fGVirRkScEfp97/view?usp=drive_link)
