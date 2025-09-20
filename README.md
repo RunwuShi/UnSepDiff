@@ -1,8 +1,9 @@
 # Unsupervised Single-Channel Speech Separation with a Diffusion Prior under Speaker-Embedding Guidance
-
+<!-- 
 <p align="center">  
     <img src="./assets/002.png" width="80%"/>
 </p>
+-->
 
 <!-- This repository contains the implementation of the paper "*Unsupervised Single-Channel Speech Separation with a Diffusion Prior under Speaker-Embedding Guidance*". -->
 
