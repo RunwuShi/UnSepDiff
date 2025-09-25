@@ -8,7 +8,7 @@
 </p>
 -->
 
-Implementation of Unsupervised Single-Channel Speech Separation with a Diffusion Prior under Speaker-Embedding Guidance.
+Unsupervised Single-Channel Speech Separation with a Diffusion Prior under Speaker-Embedding Guidance.
 
 ## Setup
 To use this repository, please prepare the code, environment and pretrained checkpoints.
